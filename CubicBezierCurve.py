@@ -157,6 +157,25 @@ class CubicBezierCurve(object):
             self.controlPointsCount -= 1
             self.curves = self.createCurves()
 
+    def translateControlPoint(self, index, vector):
+        if 0 <= index < self.controlPointsCount:
+            segmentIndex = self.insertionIndex(index)
+            segmentSize = 3
+
+            if self.controlPointsCount == 1:
+                segmentSize = self.allPoints.shape[1]
+
+            elif index == 0:
+                segmentSize = 2
+
+                if self.closed:
+                    self.allPoints[:, -2:] += vector
+
+            elif index == self.controlPointsCount - 1 and not self.closed:
+                segmentSize = 2
+
+            self.allPoints[:, segmentIndex:(segmentIndex + segmentSize)] += vector
+
     def insertionIndex(self, index):
         return 0 if index == 0 else 3 * index - 1
 
