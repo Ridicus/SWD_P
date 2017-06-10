@@ -176,6 +176,37 @@ class CubicBezierCurve(object):
 
             self.allPoints[:, segmentIndex:(segmentIndex + segmentSize)] += vector
 
+    def moveHelperPointTo(self, controlPointIndex, helperPointOffset, vector):
+        if 0 <= controlPointIndex < self.controlPointsCount:
+            ctrlIndex = self.controlPointIndex(controlPointIndex)
+            helperIndex = ctrlIndex + helperPointOffset
+            helperIndex2 = ctrlIndex - helperPointOffset
+            helperPoint = None
+            helperPoint2 = None
+
+            if helperIndex == -1 and self.closed:
+                helperPoint = self.allPoints[:, -2, np.newaxis]
+                helperPoint2 = self.allPoints[:, 1, np.newaxis]
+
+            elif helperIndex == 1:
+                helperPoint = self.allPoints[:, 1, np.newaxis]
+
+                if self.closed:
+                    helperPoint2 = self.allPoints[:, -2, np.newaxis]
+
+            elif 0 <= helperIndex < self.allPoints.shape[1]:
+                helperPoint = self.allPoints[:, helperIndex, np.newaxis]
+
+                if 0 <= helperIndex2 < self.allPoints.shape[1]:
+                    helperPoint2 = self.allPoints[:, helperIndex2, np.newaxis]
+
+            if helperPoint is not None:
+                helperPoint[:] = vector
+
+                if helperPoint2 is not None:
+                    controlPoint = self.allPoints[:, ctrlIndex, np.newaxis]
+                    helperPoint2[:] = controlPoint - np.linalg.norm(helperPoint2 - controlPoint, axis=0) * normalizeVectors(helperPoint - controlPoint)
+
     def insertionIndex(self, index):
         return 0 if index == 0 else 3 * index - 1
 
