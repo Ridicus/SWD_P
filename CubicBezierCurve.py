@@ -139,6 +139,24 @@ class CubicBezierCurve(object):
             self.controlPointsCount += 1
             self.curves = self.createCurves()
 
+    def deleteControlPoint(self, index):
+        if 0 <= index < self.controlPointsCount:
+            deletionIndex = self.insertionIndex(index)
+            deletionCount = 3
+
+            if self.controlPointsCount == 1:
+                deletionCount = self.allPoints.shape[1]
+
+            elif index == 0 and self.closed:
+                self.allPoints[:, -2:] = self.allPoints[:, 2:4]
+
+            elif index == self.controlPointsCount - 1 and not self.closed:
+                deletionIndex -= 1
+
+            self.allPoints = np.delete(self.allPoints, xrange(deletionIndex, deletionIndex + deletionCount), axis=1)
+            self.controlPointsCount -= 1
+            self.curves = self.createCurves()
+
     def insertionIndex(self, index):
         return 0 if index == 0 else 3 * index - 1
 

@@ -7,7 +7,7 @@ import Cubic1DBezierCurve as c1bc
 controlPoints = np.array([[1,2,0.5], [1,0,0.5]], dtype=float)
 ts = 0.01 * np.array(range(101))
 
-bc = c2bc.Cubic2DBezierCurve(controlPoints)#bezcur.BezierCurve(points) #c1bc.Cubic1DBezierCurve(points, True)
+bc = c2bc.Cubic2DBezierCurve(controlPoints, True)#bezcur.BezierCurve(points) #c1bc.Cubic1DBezierCurve(points, True)
 
 (P, DP) = bc(ts)
 
