@@ -207,6 +207,34 @@ class CubicBezierCurve(object):
                     controlPoint = self.allPoints[:, ctrlIndex, np.newaxis]
                     helperPoint2[:] = controlPoint - np.linalg.norm(helperPoint2 - controlPoint, axis=0) * normalizeVectors(helperPoint - controlPoint)
 
+    def getNearest(self, tBegin, tEnd, point, eps):
+        oldDotProd = 2.0
+        t = (tBegin + tEnd) / 2.0
+
+        repeat = True
+        while repeat:
+            (c, nc) = self(t)
+            nc = normalizeVectors(nc)
+            ncp = normalizeVectors(point - c)
+
+            dotProd = np.dot(ncp.T, nc)[0,0]
+
+            if np.abs(oldDotProd - dotProd) <= eps:
+                repeat = False
+
+            elif dotProd > 0:
+                tBegin = t
+                t = (tEnd + t) / 2.0
+
+            else:
+                tEnd = t
+                t = (tBegin + t) / 2.0
+
+            oldDotProd = dotProd
+
+        return (t, c)
+
+
     def insertionIndex(self, index):
         return 0 if index == 0 else 3 * index - 1
 
@@ -254,7 +282,6 @@ def calculateMidpoints(point, pointBefore, pointAfter, orthoFun):
         midpoints[:, 2, np.newaxis] = point - normal
 
     return midpoints
-
 
 def normalizeVectors(vs, copy=False):
     result = np.array(vs) if copy else vs
