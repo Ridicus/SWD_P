@@ -3,7 +3,10 @@ import CubicBezierCurve as cbc
 import Cubic2DBezierCurve as c2bc
 
 class SimulationSpace(object):
-    def __init__(self, vMax, aMax, alphaMax, discretization):
+    def __init__(self, track, trackWidthFun, vMax, aMax, alphaMax, discretization):
+        self.track = track
+        self.trackWidthFun = trackWidthFun
+
         self.vMax = vMax
         self.aMax = aMax
         self.alphaMax = alphaMax
@@ -17,13 +20,14 @@ class SimulationSpace(object):
 
 
 class State(object):
-    def __init__(self, track, tau, trackWidth, simulationSpace):
-        self.track = track
-        self.tau = tau
-        self.trackWidth = trackWidth
+    def __init__(self, simulationSpace, tau):
         self.simulationSpace = simulationSpace
+        self.tau = tau
 
-        self.trackNormal = cbc.normalizeVectors(c2bc.orthogonal2DVector(self.track(self.tau)[1]))
+        (self.trackPoint, self.trackTangent) = self.simulationSpace.track(self.tau)
+
+        self.trackTangent = cbc.normalizeVectors(self.trackTangent)
+        self.trackNormal = cbc.normalizeVectors(c2bc.orthogonal2DVector(self.trackTangent))
 
         self.s1Arr = np.zeros(self.simulationSpace.discretization, dtype=np.uint8)
         self.v1Arr = np.zeros(self.simulationSpace.discretization, dtype=np.uint8)

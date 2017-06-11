@@ -28,3 +28,5 @@ pyStr += '];'
 
 print pxStr
 print pyStr
+
+print bc.getNearest(0.0, 1.0, np.array([[1.], [4.]], dtype=np.float_), 0.001)

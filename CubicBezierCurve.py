@@ -208,29 +208,27 @@ class CubicBezierCurve(object):
                     helperPoint2[:] = controlPoint - np.linalg.norm(helperPoint2 - controlPoint, axis=0) * normalizeVectors(helperPoint - controlPoint)
 
     def getNearest(self, tBegin, tEnd, point, eps):
-        oldDotProd = 2.0
+        oldT = 2.0
         t = (tBegin + tEnd) / 2.0
 
-        repeat = True
-        while repeat:
+        while True:
             (c, dc) = self(t)
             nc = normalizeVectors(dc, True)
             ncp = normalizeVectors(point - c)
+            dotProd = np.dot(ncp.T, nc)[0, 0]
 
-            dotProd = np.dot(ncp.T, nc)[0,0]
+            if dotProd == 0 or abs(oldT - t) <= eps:
+                break;
 
-            if np.abs(oldDotProd - dotProd) <= eps:
-                repeat = False
+            oldT = t
 
-            elif dotProd > 0:
+            if dotProd > 0:
                 tBegin = t
                 t = (tEnd + t) / 2.0
 
             else:
                 tEnd = t
                 t = (tBegin + t) / 2.0
-
-            oldDotProd = dotProd
 
         return (t, c, dc)
 
