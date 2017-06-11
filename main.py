@@ -1,15 +1,16 @@
 import numpy as np
-import BezierCurve as bezcur
+import CubicBezierCurve as cbc
 import Cubic2DBezierCurve as c2bc
-import Cubic1DBezierCurve as c1bc
+import Simulation as sim
+import State as s
 
 
 controlPoints = np.array([[1,2,0.5], [1,0,0.5]], dtype=np.float_)
-ts = 0.01 * np.array(range(101))
+ts = 0.01 * np.array(xrange(101))
 
-bc = c2bc.Cubic2DBezierCurve(controlPoints, True)#bezcur.BezierCurve(points) #c1bc.Cubic1DBezierCurve(points, True)
+track = c2bc.Cubic2DBezierCurve(controlPoints, True)
 
-(P, DP) = bc(ts)
+(P, DP) = track(ts)
 
 pxStr = 'Px = ['
 pyStr = 'Py = ['
@@ -29,4 +30,17 @@ pyStr += '];'
 print pxStr
 print pyStr
 
-print bc.getNearest(0.0, 1.0, np.array([[1.], [4.]], dtype=np.float_), 0.001)
+simulationSpace = s.SimulationSpace(track, lambda tau: 0.1, 1.0, 1.0, np.pi / 4.0, (10,10,10,10,10))
+
+tau0 = 0.0
+tau1 = 0.01
+
+state = s.State(simulationSpace, tau0)
+
+(r0, n0) = track(tau0)
+n0 = cbc.normalizeVectors(n0)
+vNorm0 = 0.3
+a0 = 0.1
+b = 2.0
+
+print sim.eulerSimulation(state, r0, n0, vNorm0, tau1, a0 * sim.getRotationMatrix(0.3), b/2.0, 0.001, 0.001, 100.0)

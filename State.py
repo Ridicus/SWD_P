@@ -34,6 +34,17 @@ class State(object):
         self.gamma1Arr = np.zeros(self.simulationSpace.discretization, dtype=np.uint8)
         self.tArr = np.zeros(self.simulationSpace.discretization, dtype=np.float32)
 
+class LastState(object):
+    def __init__(self, simulationSpace):
+        self.simulationSpace = simulationSpace
+        self.tau = 1.0
+
+        (self.trackPoint, self.trackTangent) = self.simulationSpace.track(self.tau)
+
+        self.trackTangent = cbc.normalizeVectors(self.trackTangent)
+        self.trackNormal = cbc.normalizeVectors(c2bc.orthogonal2DVector(self.trackTangent))
+
+        self.tArr = np.zeros(self.simulationSpace.discretization, dtype=np.float32)
 
 def discretizeInterval(minVal, maxVal, levels, dtype=np.float_):
     result = np.array(xrange(levels), dtype)
