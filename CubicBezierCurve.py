@@ -213,8 +213,8 @@ class CubicBezierCurve(object):
 
         repeat = True
         while repeat:
-            (c, nc) = self(t)
-            nc = normalizeVectors(nc)
+            (c, dc) = self(t)
+            nc = normalizeVectors(dc, True)
             ncp = normalizeVectors(point - c)
 
             dotProd = np.dot(ncp.T, nc)[0,0]
@@ -232,7 +232,7 @@ class CubicBezierCurve(object):
 
             oldDotProd = dotProd
 
-        return (t, c)
+        return (t, c, dc)
 
 
     def insertionIndex(self, index):
