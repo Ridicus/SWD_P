@@ -157,10 +157,12 @@ class CubicBezierCurve(object):
             self.controlPointsCount -= 1
             self.curves = self.createCurves()
 
-    def translateControlPoint(self, index, vector):
+    def moveControlPointTo(self, index, vector):
         if 0 <= index < self.controlPointsCount:
             segmentIndex = self.insertionIndex(index)
             segmentSize = 3
+
+            delta = vector - self.allPoints[:, self.controlPointIndex(index), np.newaxis]
 
             if self.controlPointsCount == 1:
                 segmentSize = self.allPoints.shape[1]
@@ -169,12 +171,12 @@ class CubicBezierCurve(object):
                 segmentSize = 2
 
                 if self.closed:
-                    self.allPoints[:, -2:] += vector
+                    self.allPoints[:, -2:] += delta
 
             elif index == self.controlPointsCount - 1 and not self.closed:
                 segmentSize = 2
 
-            self.allPoints[:, segmentIndex:(segmentIndex + segmentSize)] += vector
+            self.allPoints[:, segmentIndex:(segmentIndex + segmentSize)] += delta
 
     def moveHelperPointTo(self, controlPointIndex, helperPointOffset, vector):
         if 0 <= controlPointIndex < self.controlPointsCount:
@@ -231,6 +233,29 @@ class CubicBezierCurve(object):
                 t = (tBegin + t) / 2.0
 
         return (t, c, dc)
+
+    def getNearestTableIndices(self, point, dist):
+        lengths = np.linalg.norm(self.allPoints - point, axis=0)
+        tableIndex = np.where(np.logical_and(lengths == lengths.min(), lengths <= dist))[0]
+
+        if tableIndex.shape[0] == 0:
+            return (None, None)
+
+        else:
+            ind = tableIndex[0]
+            indMod3 = ind % 3
+
+            if indMod3 == 0:
+                return (ind / 3, 0)
+
+            elif indMod3 == 1:
+                return ((ind - 1) / 3, 1)
+
+            elif self.closed:
+                return (((ind + 1) % (self.allPoints.shape[1] - 1)) / 3, -1)
+
+            else:
+                return ((ind + 1) / 3, -1)
 
 
     def insertionIndex(self, index):
