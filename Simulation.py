@@ -14,7 +14,14 @@ class Simulation(object):
     def simulate(self, nextState, tau):
         state = s.State(nextState.simulationSpace, tau)
 
+        discretization = state.simulationSpace.discretization
 
+        for i in xrange(discretization[0]):
+            for j in xrange(discretization[1]):
+                for k in xrange(discretization[2]):
+                    for l in xrange(discretization[3]):
+                        for m in xrange(discretization[4]):
+                            self.simulationStep(state, nextState, i, j, k, l, m)
 
         return state
 
