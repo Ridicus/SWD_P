@@ -30,17 +30,28 @@ pyStr += '];'
 print pxStr
 print pyStr
 
-simulationSpace = s.SimulationSpace(track, lambda tau: 0.1, 1.0, 1.0, np.pi / 4.0, (10,10,10,10,10))
 
 tau0 = 0.0
 tau1 = 0.01
-
-state = s.State(simulationSpace, tau0)
 
 (r0, n0) = track(tau0)
 n0 = cbc.normalizeVectors(n0)
 vNorm0 = 0.3
 a0 = 0.1
 b = 2.0
+aMax = 1.0
+vMax = np.sqrt(2.0 * aMax / b)
 
-print sim.eulerSimulation(state, r0, n0, vNorm0, tau1, a0 * sim.getRotationMatrix(0.3), b/2.0, 0.001, 0.001, 100.0)
+dt = 0.01
+eps = 0.001
+maxT = 20.0
+
+print vMax
+
+simulationSpace = s.SimulationSpace(track, lambda tau: 0.1, vMax, aMax, np.pi / 4.0, (10,10,10,10,10))
+state = s.State(simulationSpace, tau0)
+nextState = s.State(simulationSpace, tau1)
+
+#print sim.Simulation(b, dt, eps, maxT).eulerSimulation(state, r0, n0, vNorm0, a0 * sim.getRotationMatrix(0.3), tau1)
+
+sim.Simulation(b, dt, eps, maxT).simulationStep(state, nextState, 5, 5, 5, 5, 5)#.eulerSimulation(state, r0, n0, vNorm0, a0 * sim.getRotationMatrix(0.3), tau1)
