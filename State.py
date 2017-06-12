@@ -32,6 +32,9 @@ class State(object):
         self.s1Arr = np.zeros(self.simulationSpace.discretization, dtype=np.uint8)
         self.v1Arr = np.zeros(self.simulationSpace.discretization, dtype=np.uint8)
         self.gamma1Arr = np.zeros(self.simulationSpace.discretization, dtype=np.uint8)
+        self.a1Arr = np.zeros(self.simulationSpace.discretization, dtype=np.uint8)
+        self.alpha1Arr = np.zeros(self.simulationSpace.discretization, dtype=np.uint8)
+
         self.tArr = np.zeros(self.simulationSpace.discretization, dtype=np.float32)
 
 class LastState(object):

@@ -30,7 +30,7 @@ class Simulation(object):
 
         result = self.eulerSimulation(state, r, n, vNorm, u, nextState.tau)
 
-        state.tArr[sInd, vInd, gammaInd, aInd, alphaInd] = result[0] + nextState.tArr[sInd, vInd, gammaInd, aInd, alphaInd]
+        state.tArr[sInd, vInd, gammaInd, aInd, alphaInd] = result[0]
 
         if result[0] != np.inf:
             r1 = result[1]
@@ -40,9 +40,22 @@ class Simulation(object):
             s1 = np.dot(nextState.trackNormal.T, r1 - nextState.trackPoint)[0, 0]
             gamma1 = cmp(s1, 0) * math.acos(np.dot(nextState.trackTangent.T, n1))
 
-            print (s1, vNorm1, gamma1) # REMOVE
-        else: # REMOVE
-            print "INF" # REMOVE
+            s1Ind = getNearestIndex(s1, simSpace.sVect)
+            vNorm1Ind = getNearestIndex(vNorm1, simSpace.vVect)
+            gamma1Ind = getNearestIndex(gamma1, simSpace.gammaVect)
+
+            t1Arr = nextState.tArr[s1Ind, vNorm1Ind, gamma1Ind, :, :]
+            a1alpha1Inds = np.where(t1Arr == t1Arr.min())
+            a1Ind = a1alpha1Inds[0][0]
+            alpha1Ind = a1alpha1Inds[1][0]
+
+            state.tArr[sInd, vInd, gammaInd, aInd, alphaInd] += t1Arr[a1Ind, alpha1Ind]
+
+            state.s1Arr[sInd, vInd, gammaInd, aInd, alphaInd] = s1Ind
+            state.v1Arr[sInd, vInd, gammaInd, aInd, alphaInd] = vNorm1Ind
+            state.gamma1Arr[sInd, vInd, gammaInd, aInd, alphaInd] = gamma1Ind
+            state.a1Arr[sInd, vInd, gammaInd, aInd, alphaInd] = a1Ind
+            state.alpha1Arr[sInd, vInd, gammaInd, aInd, alphaInd] = alpha1Ind
 
 
     def eulerSimulation(self, state, r0, n0, vNorm0, u0, tau1):
@@ -80,3 +93,16 @@ def getRotationMatrix(alpha):
     cosa = math.cos(alpha)
 
     return np.array([[cosa, -sina], [sina, cosa]], dtype=np.float32)
+
+def getNearestIndex(val, interval):
+    ind = interval[interval <= val].shape[0]
+
+    if ind == 0:
+        return ind
+
+    elif ind == interval.shape[0]:
+        return ind - 1
+
+    else:
+        return ind if abs(val - interval[ind]) < abs(val - interval[ind - 1]) else ind - 1
+

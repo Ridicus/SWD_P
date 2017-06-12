@@ -32,26 +32,36 @@ print pyStr
 
 
 tau0 = 0.0
-tau1 = 0.01
+tau1 = 0.04
 
-(r0, n0) = track(tau0)
-n0 = cbc.normalizeVectors(n0)
-vNorm0 = 0.3
-a0 = 0.1
+#(r0, n0) = track(tau0)
+#n0 = cbc.normalizeVectors(n0)
+#vNorm0 = 3.0
+#a0 = 8.
 b = 2.0
-aMax = 1.0
-vMax = np.sqrt(2.0 * aMax / b)
+vMax = 5.0
+aMax = b/2.0 * vMax ** 2
 
 dt = 0.01
 eps = 0.001
 maxT = 20.0
 
-print vMax
+print aMax
 
-simulationSpace = s.SimulationSpace(track, lambda tau: 0.1, vMax, aMax, np.pi / 4.0, (10,10,10,10,10))
+simulationSpace = s.SimulationSpace(track, lambda tau: 0.1, vMax, aMax, np.pi / 4.0, (20, 20, 20, 20, 20))
 state = s.State(simulationSpace, tau0)
 nextState = s.State(simulationSpace, tau1)
 
 #print sim.Simulation(b, dt, eps, maxT).eulerSimulation(state, r0, n0, vNorm0, a0 * sim.getRotationMatrix(0.3), tau1)
 
-sim.Simulation(b, dt, eps, maxT).simulationStep(state, nextState, 5, 5, 5, 5, 5)#.eulerSimulation(state, r0, n0, vNorm0, a0 * sim.getRotationMatrix(0.3), tau1)
+sInd = 10
+vInd = 10
+gammaInd = 10
+aInd = 19
+alphaInd = 10
+
+sim.Simulation(b, dt, eps, maxT).simulationStep(state, nextState, sInd, vInd, gammaInd, aInd, alphaInd)#.eulerSimulation(state, r0, n0, vNorm0, a0 * sim.getRotationMatrix(0.3), tau1)
+
+print state.tArr[sInd, vInd, gammaInd, aInd, alphaInd], state.s1Arr[sInd, vInd, gammaInd, aInd, alphaInd], \
+    state.v1Arr[sInd, vInd, gammaInd, aInd, alphaInd], state.gamma1Arr[sInd, vInd, gammaInd, aInd, alphaInd], \
+    state.a1Arr[sInd, vInd, gammaInd, aInd, alphaInd], state.alpha1Arr[sInd, vInd, gammaInd, aInd, alphaInd]
