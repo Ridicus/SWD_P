@@ -13,6 +13,7 @@ class TrackVisualizer(object):
         self.clickDistance = clickDistance
 
         canvas.bind('<Button-1>', lambda e: self.mousePressed(e))
+        canvas.bind('<Button-3>', lambda e: self.mouseRPressed(e))
         canvas.bind('<B1-Motion>', lambda e: self.mouseHeld(e))
         canvas.bind('<ButtonRelease-1>', lambda e: self.mouseReleased(e))
 
@@ -37,26 +38,27 @@ class TrackVisualizer(object):
         self.paint()
 
     def paint(self):
-        canvas = self.canvas
-        canvas.delete(tk.ALL)
+        if self.curve.controlPointsCount > 0:
+            canvas = self.canvas
+            canvas.delete(tk.ALL)
 
-        (trackPoints, tangents) = self.curve(self.ts)
-        normals = cbc.normalizeVectors(c2bc.orthogonal2DVector(tangents))
-        borderPoints1 = trackPoints + self.widths * normals
-        borderPoints2 = trackPoints - self.widths * normals
+            (trackPoints, tangents) = self.curve(self.ts)
+            normals = cbc.normalizeVectors(c2bc.orthogonal2DVector(tangents))
+            borderPoints1 = trackPoints + self.widths * normals
+            borderPoints2 = trackPoints - self.widths * normals
 
-        for i in xrange(trackPoints.shape[1] - 1):
-            j = i + 1
-            canvas.create_line(trackPoints[0, i], trackPoints[1, i],
-                               trackPoints[0, j], trackPoints[1, j], fill=self.trackColor)
-            canvas.create_line(borderPoints1[0, i], borderPoints1[1, i],
-                               borderPoints1[0, j], borderPoints1[1, j], fill=self.borderColor)
-            canvas.create_line(borderPoints2[0, i], borderPoints2[1, i],
-                               borderPoints2[0, j], borderPoints2[1, j], fill=self.borderColor)
+            for i in xrange(trackPoints.shape[1] - 1):
+                j = i + 1
+                canvas.create_line(trackPoints[0, i], trackPoints[1, i],
+                                   trackPoints[0, j], trackPoints[1, j], fill=self.trackColor)
+                canvas.create_line(borderPoints1[0, i], borderPoints1[1, i],
+                                   borderPoints1[0, j], borderPoints1[1, j], fill=self.borderColor)
+                canvas.create_line(borderPoints2[0, i], borderPoints2[1, i],
+                                   borderPoints2[0, j], borderPoints2[1, j], fill=self.borderColor)
 
-        if self.editMode:
-            for i in xrange(self.curve.controlPointsCount):
-                self.drawPoints(i)
+            if self.editMode:
+                for i in xrange(self.curve.controlPointsCount):
+                    self.drawPoints(i)
 
 
     def drawPoints(self, index):
@@ -95,7 +97,12 @@ class TrackVisualizer(object):
 
     def mousePressed(self, event):
         if self.editMode:
-            (self.ind, self.off) = self.curve.getNearestTableIndices(np.array([[event.x], [event.y]], dtype=np.float_), self.clickDistance)
+            point = np.array([[event.x], [event.y]], dtype=np.float_)
+            (self.ind, self.off) = self.curve.getNearestTableIndices(point, self.clickDistance)
+
+            if self.ind is None:
+                (self.ind, self.off) = (self.curve.getInsertionIndex(point), 0)
+                self.curve.insertControlPoint(point, self.ind)
 
     def mouseHeld(self, event):
         if self.editMode:
@@ -114,3 +121,12 @@ class TrackVisualizer(object):
 
     def mouseReleased(self, event):
         (self.ind, self.off) = (None, None)
+
+    def mouseRPressed(self, event):
+        if self.editMode:
+            ind = self.curve.getNearestTableIndices(np.array([[event.x], [event.y]], dtype=np.float_), self.clickDistance)[0]
+
+            if ind is not None:
+                self.curve.deleteControlPoint(ind)
+
+                self.paint()

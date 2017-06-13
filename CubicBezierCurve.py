@@ -235,6 +235,9 @@ class CubicBezierCurve(object):
         return (t, c, dc)
 
     def getNearestTableIndices(self, point, dist):
+        if self.controlPointsCount == 0:
+            return (None, None)
+
         lengths = np.linalg.norm(self.allPoints - point, axis=0)
         tableIndex = np.where(np.logical_and(lengths == lengths.min(), lengths <= dist))[0]
 
@@ -256,6 +259,29 @@ class CubicBezierCurve(object):
 
             else:
                 return ((ind + 1) / 3, -1)
+
+    def getInsertionIndex(self, point):
+        if self.controlPointsCount <= 1:
+            return 0
+
+        dist = np.linalg.norm(self.allPoints[:, xrange(0, 3 * self.controlPointsCount, 3)] - point, axis=0)
+        insInd = np.where(dist == dist.min())[0][0]
+
+        if self.closed:
+            if insInd == 0:
+                return 1 if dist[1] < dist[-1] else 0
+
+            elif insInd == self.controlPointsCount - 1:
+                return insInd + (1 if dist[0] < dist[insInd - 1] else 0)
+
+        else:
+            if insInd == 0:
+                return 0
+
+            elif insInd == self.controlPointsCount - 1:
+                return insInd + 1
+
+        return insInd + (1 if dist[0] < dist[insInd - 1] else 0)
 
 
     def insertionIndex(self, index):
