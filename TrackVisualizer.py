@@ -38,10 +38,10 @@ class TrackVisualizer(object):
         self.paint()
 
     def paint(self):
-        if self.curve.controlPointsCount > 0:
-            canvas = self.canvas
-            canvas.delete(tk.ALL)
+        canvas = self.canvas
+        canvas.delete(tk.ALL)
 
+        if self.curve.controlPointsCount > 0:
             (trackPoints, tangents) = self.curve(self.ts)
             normals = cbc.normalizeVectors(c2bc.orthogonal2DVector(tangents))
             borderPoints1 = trackPoints + self.widths * normals

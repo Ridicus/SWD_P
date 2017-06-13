@@ -5,7 +5,7 @@ import TrackVisualizer as tv
 
 controlPoints = np.array([[], []], dtype=np.float_)#np.array([[25,150,180], [25,180,120]], dtype=np.float_)
 
-curve = c2bc.Cubic2DBezierCurve(controlPoints, True)
+curve = c2bc.Cubic2DBezierCurve(controlPoints, True, 20)
 
 main = tk.Tk()
 

@@ -3,9 +3,10 @@ from BezierCurve import BezierCurve
 
 
 class CubicBezierCurve(object):
-    def __init__(self, controlPoints, orthoFun, closed=False):
+    def __init__(self, controlPoints, orthoFun, closed=False, initialAnchorLength=1.0):
         self.orthoFun = orthoFun
         self.closed = closed
+        self.initialAnchorLength = initialAnchorLength
         self.controlPointsCount = controlPoints.shape[1]
         self.allPoints = self.addMidpoints(controlPoints)
         self.curves = self.createCurves()
@@ -88,7 +89,8 @@ class CubicBezierCurve(object):
             if self.controlPointsCount == 0:
                 if self.closed:
                     self.allPoints = np.zeros((self.allPoints.shape[0], 4))
-                    self.allPoints[:, (-2, 0, 1)] = calculateMidpoints(point, point, point, self.orthoFun)
+                    self.allPoints[:, (-2, 0, 1)] = calculateMidpoints(point, point, point, self.orthoFun,
+                                                                       self.initialAnchorLength)
                     self.allPoints[:, -1, np.newaxis] = point
 
                 else:
@@ -98,16 +100,18 @@ class CubicBezierCurve(object):
                 self.allPoints = np.insert(self.allPoints, (index,), np.zeros((self.allPoints.shape[0], 3)), axis=1)
                 self.allPoints[:, -index, np.newaxis] = point
                 self.allPoints[:, :2] = calculateMidpoints(self.allPoints[:, 0, np.newaxis], None,
-                                                            self.allPoints[:, -1, np.newaxis], self.orthoFun)
+                                                           self.allPoints[:, -1, np.newaxis], self.orthoFun,
+                                                           self.initialAnchorLength)
                 self.allPoints[:, -2:] = calculateMidpoints(self.allPoints[:, -1, np.newaxis],
-                                                            self.allPoints[:, 0, np.newaxis], None, self.orthoFun)
+                                                            self.allPoints[:, 0, np.newaxis], None, self.orthoFun,
+                                                            self.initialAnchorLength)
 
             elif 0 < index and (index < self.controlPointsCount or self.closed):
                 self.allPoints = np.insert(self.allPoints, (self.insertionIndex(index), ),
                                            calculateMidpoints(point,
                                                               self.allPoints[:, self.controlPointIndex(index - 1), np.newaxis],
                                                               self.allPoints[:, self.controlPointIndex(index + 1), np.newaxis],
-                                                              self.orthoFun), axis=1)
+                                                              self.orthoFun, self.initialAnchorLength), axis=1)
 
             elif index == 0:
                 self.allPoints = np.insert(self.allPoints, (0,), np.zeros((self.allPoints.shape[0], 3)), axis=1)
@@ -117,23 +121,25 @@ class CubicBezierCurve(object):
                     self.allPoints[:, (-2, 0, 1)] = calculateMidpoints(point,
                                                                        self.allPoints[:, self.controlPointIndex(-1), np.newaxis],
                                                                        self.allPoints[:, self.controlPointIndex(1), np.newaxis],
-                                                                       self.orthoFun)
+                                                                       self.orthoFun, self.initialAnchorLength)
                     self.allPoints[:, -1, np.newaxis] = point
 
                 else:
                     oldStartPointIndex = self.controlPointIndex(1)
                     oldStartPoint = self.allPoints[:, oldStartPointIndex, np.newaxis]
-                    self.allPoints[:, (0, 1)] = calculateMidpoints(point, None, oldStartPoint, self.orthoFun)
+                    self.allPoints[:, (0, 1)] = calculateMidpoints(point, None, oldStartPoint, self.orthoFun, self.initialAnchorLength)
 
-                    self.allPoints[:, 2, np.newaxis] = oldStartPoint - normalizeVectors(self.allPoints[:, oldStartPointIndex + 1, np.newaxis]
+                    self.allPoints[:, 2, np.newaxis] = oldStartPoint - self.initialAnchorLength * \
+                                                                       normalizeVectors(self.allPoints[:, oldStartPointIndex + 1, np.newaxis]
                                                                                         - oldStartPoint)
 
             else:
                 oldEndPointIndex = self.controlPointIndex(-1)
                 oldEndPoint = self.allPoints[:, oldEndPointIndex, np.newaxis]
                 self.allPoints = np.insert(self.allPoints, (oldEndPointIndex + 1,), np.zeros((self.allPoints.shape[0], 3)), axis=1)
-                self.allPoints[:, -2:] = calculateMidpoints(point, oldEndPoint, None, self.orthoFun)
-                self.allPoints[:, -3, np.newaxis] = oldEndPoint - normalizeVectors(self.allPoints[:, oldEndPointIndex - 1, np.newaxis]
+                self.allPoints[:, -2:] = calculateMidpoints(point, oldEndPoint, None, self.orthoFun, self.initialAnchorLength)
+                self.allPoints[:, -3, np.newaxis] = oldEndPoint - self.initialAnchorLength * \
+                                                                  normalizeVectors(self.allPoints[:, oldEndPointIndex - 1, np.newaxis]
                                                                                   - oldEndPoint)
 
             self.controlPointsCount += 1
@@ -264,15 +270,25 @@ class CubicBezierCurve(object):
         if self.controlPointsCount <= 1:
             return 0
 
-        dist = np.linalg.norm(self.allPoints[:, xrange(0, 3 * self.controlPointsCount, 3)] - point, axis=0)
+        ctrlPoints = self.allPoints[:, xrange(0, 3 * self.controlPointsCount, 3)]
+        dist = np.linalg.norm(ctrlPoints - point, axis=0)
         insInd = np.where(dist == dist.min())[0][0]
+
+        centralPoint = ctrlPoints[:, insInd, np.newaxis]
+        deltaT = normalizeVectors(point - centralPoint).T
 
         if self.closed:
             if insInd == 0:
-                return 1 if dist[1] < dist[-1] else 0
+                deltaAfter = normalizeVectors(ctrlPoints[:, 1, np.newaxis] - centralPoint)
+                deltaBefore = normalizeVectors(ctrlPoints[:, -1, np.newaxis] - centralPoint)
+
+                return 1 if np.dot(deltaT, deltaAfter)[0, 0] > np.dot(deltaT, deltaBefore)[0, 0] else 0
 
             elif insInd == self.controlPointsCount - 1:
-                return insInd + (1 if dist[0] < dist[insInd - 1] else 0)
+                deltaAfter = normalizeVectors(ctrlPoints[:, 0, np.newaxis] - centralPoint)
+                deltaBefore = normalizeVectors(ctrlPoints[:, insInd - 1, np.newaxis] - centralPoint)
+
+                return insInd + (1 if np.dot(deltaT, deltaAfter)[0, 0] > np.dot(deltaT, deltaBefore)[0, 0] else 0)
 
         else:
             if insInd == 0:
@@ -281,7 +297,10 @@ class CubicBezierCurve(object):
             elif insInd == self.controlPointsCount - 1:
                 return insInd + 1
 
-        return insInd + (1 if dist[0] < dist[insInd - 1] else 0)
+        deltaAfter = normalizeVectors(ctrlPoints[:, insInd + 1, np.newaxis] - centralPoint)
+        deltaBefore = normalizeVectors(ctrlPoints[:, insInd - 1, np.newaxis] - centralPoint)
+
+        return insInd + (1 if np.dot(deltaT, deltaAfter)[0, 0] > np.dot(deltaT, deltaBefore)[0, 0] else 0)
 
 
     def insertionIndex(self, index):
@@ -290,7 +309,7 @@ class CubicBezierCurve(object):
     def controlPointIndex(self, index):
         return 3 * (index % self.controlPointsCount)
 
-def calculateMidpoints(point, pointBefore, pointAfter, orthoFun):
+def calculateMidpoints(point, pointBefore, pointAfter, orthoFun, initialAnchorLength):
     isBeforeNone = pointBefore is None
     isAfterNone = pointAfter is None
     isBeforeEqPoint = np.array_equal(pointBefore, point)
@@ -302,11 +321,11 @@ def calculateMidpoints(point, pointBefore, pointAfter, orthoFun):
     elif isBeforeNone:
         midpoints = np.zeros((point.shape[0], 2))
         midpoints[:, 0, np.newaxis] = point
-        midpoints[:, 1, np.newaxis] = point + normalizeVectors(orthoFun(pointAfter - point) if not isAfterEqPoint else np.ones(point.shape))
+        midpoints[:, 1, np.newaxis] = point + initialAnchorLength * normalizeVectors(orthoFun(pointAfter - point) if not isAfterEqPoint else np.ones(point.shape))
 
     elif isAfterNone:
         midpoints = np.zeros((point.shape[0], 2))
-        midpoints[:, 0, np.newaxis] = point + normalizeVectors(orthoFun(pointBefore - point) if not isBeforeEqPoint else np.ones(point.shape))
+        midpoints[:, 0, np.newaxis] = point + initialAnchorLength * normalizeVectors(orthoFun(pointBefore - point) if not isBeforeEqPoint else np.ones(point.shape))
         midpoints[:, 1, np.newaxis] = point
 
     else:
@@ -327,8 +346,8 @@ def calculateMidpoints(point, pointBefore, pointAfter, orthoFun):
         else:
             normal = normalizeVectors(pointBefore - pointAfter)
 
-        midpoints[:, 0, np.newaxis] = point + normal
-        midpoints[:, 2, np.newaxis] = point - normal
+        midpoints[:, 0, np.newaxis] = point + initialAnchorLength * normal
+        midpoints[:, 2, np.newaxis] = point - initialAnchorLength * normal
 
     return midpoints
 
