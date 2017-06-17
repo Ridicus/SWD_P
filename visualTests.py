@@ -11,7 +11,7 @@ main = tk.Tk()
 
 canvas = tk.Canvas(main, height=200, width=200)
 
-visualizer = tv.TrackVisualizer(canvas, curve, lambda t: 10, 1000, 2, 10, 'blue', 'red', 'orange')
+visualizer = tv.TrackVisualizer(canvas, curve, lambda t: 10, lambda : 2, 1000, 2, 10, 'blue', 'red', 'green', 'orange')
 visualizer.setEditMode(True)
 
 canvas.pack(fill='both', expand=1)

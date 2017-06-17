@@ -4,10 +4,11 @@ import CubicBezierCurve as cbc
 import Cubic2DBezierCurve as c2bc
 
 class TrackVisualizer(object):
-    def __init__(self, canvas, curve, widthFun, steps, pointSize, clickDistance, trackColor, borderColor, pointColor):
+    def __init__(self, canvas, curve, widthFun, waypointsCountFun, steps, pointSize, clickDistance, trackColor, borderColor, waypointColor, pointColor):
         self.canvas = canvas
         self.curve = curve
         self.widthFun = widthFun
+        self.waypointsCountFun = waypointsCountFun
         self.steps = steps
         self.pointSize = pointSize
         self.clickDistance = clickDistance
@@ -20,13 +21,12 @@ class TrackVisualizer(object):
         self.ts = np.array(xrange(self.steps + 1), dtype=np.float_)
         self.ts /= self.steps
 
-        self.widths = np.vectorize(self.widthFun)(self.ts)
-
         self.ind = None
         self.off = None
 
         self.trackColor = trackColor
         self.borderColor = borderColor
+        self.waypointColor = waypointColor
         self.pointColor = pointColor
 
         self.editMode = False
@@ -44,8 +44,9 @@ class TrackVisualizer(object):
         if self.curve.controlPointsCount > 0:
             (trackPoints, tangents) = self.curve(self.ts)
             normals = cbc.normalizeVectors(c2bc.orthogonal2DVector(tangents))
-            borderPoints1 = trackPoints + self.widths * normals
-            borderPoints2 = trackPoints - self.widths * normals
+            widths = np.vectorize(self.widthFun)(self.ts)
+            borderPoints1 = trackPoints + widths * normals
+            borderPoints2 = trackPoints - widths * normals
 
             for i in xrange(trackPoints.shape[1] - 1):
                 j = i + 1
@@ -55,6 +56,22 @@ class TrackVisualizer(object):
                                    borderPoints1[0, j], borderPoints1[1, j], fill=self.borderColor)
                 canvas.create_line(borderPoints2[0, i], borderPoints2[1, i],
                                    borderPoints2[0, j], borderPoints2[1, j], fill=self.borderColor)
+
+            waypointsCount = self.waypointsCountFun()
+
+            if waypointsCount >= 2:
+                waypointsts = np.array(xrange(waypointsCount), dtype=np.float_)
+                waypointsts /= waypointsCount - 1.0
+
+                (waypoints, tangents) = self.curve(waypointsts)
+                normals = cbc.normalizeVectors(c2bc.orthogonal2DVector(tangents))
+                widths = np.vectorize(self.widthFun)(waypointsts)
+                wayBorderPoints1 = waypoints + widths * normals
+                wayBorderPoints2 = waypoints - widths * normals
+
+                for i in xrange(waypointsCount):
+                    canvas.create_line(wayBorderPoints1[0, i], wayBorderPoints1[1, i],
+                                       wayBorderPoints2[0, i], wayBorderPoints2[1, i], fill=self.waypointColor)
 
             if self.editMode:
                 for i in xrange(self.curve.controlPointsCount):
