@@ -30,10 +30,12 @@ class MainFrame(tk.Frame):
 
         self.lboxLabel = tk.Label(self, text='Decyzje')
 
-        self.lboxScroll = tk.Scrollbar(self, orient=tk.VERTICAL)
+        self.lboxXScroll = tk.Scrollbar(self, orient=tk.HORIZONTAL)
+        self.lboxYScroll = tk.Scrollbar(self, orient=tk.VERTICAL)
 
-        self.decisionListBox = tk.Listbox(self, yscrollcommand=self.lboxScroll.set)
-        self.lboxScroll['command'] = self.decisionListBox.yview
+        self.decisionListBox = tk.Listbox(self, xscrollcommand=self.lboxXScroll.set, yscrollcommand=self.lboxYScroll.set)
+        self.lboxYScroll['command'] = self.decisionListBox.yview
+        self.lboxXScroll['command'] = self.decisionListBox.xview
 
         self.progress = ttk.Progressbar(self, mode='determinate')
 
@@ -53,12 +55,13 @@ class MainFrame(tk.Frame):
 
         self.decisionListBox.grid(row=6, column=0, rowspan=2, columnspan=2, sticky='NEWS')
 
-        self.lboxScroll.grid(row=6, column=2, rowspan=2, sticky='NWS')
+        self.lboxXScroll.grid(row=8, column=0, columnspan=2, sticky='NEW')
+        self.lboxYScroll.grid(row=6, column=2, rowspan=2, sticky='NWS')
 
-        self.progress.grid(row=8, column=0, columnspan=5, sticky='NEWS')
+        self.progress.grid(row=9, column=0, columnspan=5, sticky='NEWS')
 
-        self.startStopButton.grid(row=7, column=3)
-        self.editButton.grid(row=7, column=4)
+        self.startStopButton.grid(row=7, column=3, rowspan=2)
+        self.editButton.grid(row=7, column=4, rowspan=2)
 
         self.canvas.grid(row=0, column=3, rowspan=7, columnspan=2, sticky='NEWS')
 
@@ -78,6 +81,7 @@ class MainFrame(tk.Frame):
         self.rowconfigure(6, weight=2)
         self.rowconfigure(7, weight=2)
         self.rowconfigure(8, weight=1)
+        self.rowconfigure(9, weight=1)
 
     def enableInputWidgets(self):
         self.editButton['state'] = tk.NORMAL
