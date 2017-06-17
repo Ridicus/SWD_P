@@ -46,15 +46,15 @@ class CubicBezierCurve(object):
                 if self.closed:
                     allPoints[:, (-2, 0, 1)] = calculateMidpoints(points[:, 0, np.newaxis], points[:, -1, np.newaxis],
                                                                   points[:, 0 if points.shape[1] == 1 else 1, np.newaxis],
-                                                                  self.orthoFun)
+                                                                  self.orthoFun, self.initialAnchorLength)
                     allPoints[:, -1, np.newaxis] = points[:, 0, np.newaxis]
                     pointsRange = xrange(1, points.shape[1])
 
                 else:
                     allPoints[:, (0, 1)] = calculateMidpoints(points[:, 0, np.newaxis], None, points[:, 1, np.newaxis],
-                                                              self.orthoFun)
+                                                              self.orthoFun, self.initialAnchorLength)
                     allPoints[:, (-2, -1)] = calculateMidpoints(points[:, -1, np.newaxis], points[:, -2, np.newaxis],
-                                                                None, self.orthoFun)
+                                                                None, self.orthoFun, self.initialAnchorLength)
                     pointsRange = xrange(1, points.shape[1] - 1)
 
                 sliceStart = 2
@@ -63,7 +63,7 @@ class CubicBezierCurve(object):
                 for i in pointsRange:
                     allPoints[:, sliceStart:sliceEnd] = calculateMidpoints(points[:, i, np.newaxis], points[:, i - 1, np.newaxis],
                                                                points[:, (i + 1) % points.shape[1], np.newaxis],
-                                                               self.orthoFun)
+                                                               self.orthoFun, self.initialAnchorLength)
                     sliceStart += 3
                     sliceEnd += 3
 
