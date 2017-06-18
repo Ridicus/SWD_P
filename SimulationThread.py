@@ -24,6 +24,7 @@ class SimulationThread(th.Thread):
 
         while self.mainFrame.continueExecution() and self.simulationStepsCount > 0:
             nextState = self.states[0]
+            print nextState.tArr.min()
             self.states.insert(0, simulation.simulate(nextState, nextState.tau - self.tauDelta,
                                                       lambda : not self.mainFrame.continueExecution(),
                                                       self.mainFrame.progressStep))

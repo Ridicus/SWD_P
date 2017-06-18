@@ -10,10 +10,10 @@ import TrackVisualizer as tv
 class MainFrame(tk.Frame):
     def __init__(self, master=None):
         tk.Frame.__init__(self, master)
-        self.discretization = (5, 5, 5, 5, 5)
-        self.dt = 0.1
+        self.discretization = (5, 5, 5, 5, 5) # (s, vNorm, gamma, a, alpha)
+        self.dt = 0.01
         self.eps = 0.01
-        self.maxT = 10.0
+        self.maxT = 20.0
 
         self.running = False
         self.editMode = False
@@ -43,7 +43,7 @@ class MainFrame(tk.Frame):
         self.startPosScale = tk.Scale(self, orient='horizontal', from_=-1.0, to=1.0, resolution=0.1, label='Pozycja startowa',
                                       command=self.startPosScaleChanged)
         self.bScale = tk.Scale(self, orient='horizontal', from_=0.0, to=2.0, resolution=0.1, label='Parametr oporu powietrza')
-        self.vMaxScale = tk.Scale(self, orient='horizontal', from_=0.0, to=20.0, resolution=0.1, label='Predkosc maksymalna')
+        self.vMaxScale = tk.Scale(self, orient='horizontal', from_=50.0, to=200.0, resolution=0.1, label='Predkosc maksymalna')
         self.alphaMaxScale = tk.Scale(self, orient='horizontal', from_=0, to=90, label='Maksymalny kat skretu')
 
         self.lboxLabel = tk.Label(self, text='Decyzje')
@@ -81,8 +81,8 @@ class MainFrame(tk.Frame):
 
         self.progress.grid(row=11, column=0, columnspan=5, sticky='NEWS')
 
-        self.startStopButton.grid(row=8, column=3, rowspan=3)
-        self.editButton.grid(row=8, column=4, rowspan=3)
+        self.startStopButton.grid(row=7, column=3, rowspan=4)
+        self.editButton.grid(row=7, column=4, rowspan=4)
 
         self.canvas.grid(row=0, column=3, rowspan=7, columnspan=2, sticky='NEWS')
 
@@ -202,22 +202,29 @@ class MainFrame(tk.Frame):
             vNormInd = sim.getNearestIndex(0.0, simulationSpace.vVect)
             gammaInd = sim.getNearestIndex(0.0, simulationSpace.gammaVect)
 
-            self.timeLabel['text'] = 'Minimalny czas: %.2f' % (self.states[0].tArr[sInd, vNormInd, gammaInd, :, :].min(), )
+            tMin = self.states[0].tArr[sInd, vNormInd, gammaInd, :, :].min()
 
-            for i in xrange(len(self.states) - 1):
-                state = self.states[i]
+            if tMin == np.inf:
+                self.timeLabel['text'] = 'Minimalny czas: -'
 
-                tArr = state.tArr[sInd, vNormInd, gammaInd, :, :]
-                aAlphaInds = np.where(tArr == tArr.min())
-                aInd = aAlphaInds[0][0]
-                alphaInd = aAlphaInds[1][0]
+            else:
+                self.timeLabel['text'] = 'Minimalny czas: %.2f' % (tMin,)
 
-                self.decisionListBox.insert(tk.END, 'a: %.2f alpha: %.2f' % (simulationSpace.aVect[aInd],
-                                                                             simulationSpace.alphaVect[alphaInd] * 180.0 / np.pi))
-                s1Ind = state.s1Arr[sInd, vNormInd, gammaInd, aInd, alphaInd]
-                vNorm1Ind = state.v1Arr[sInd, vNormInd, gammaInd, aInd, alphaInd]
-                gamma1Ind = state.gamma1Arr[sInd, vNormInd, gammaInd, aInd, alphaInd]
+                for i in xrange(len(self.states) - 1):
+                    state = self.states[i]
 
-                sInd = s1Ind
-                vNormInd = vNorm1Ind
-                gammaInd = gamma1Ind
+                    tArr = state.tArr[sInd, vNormInd, gammaInd, :, :]
+                    aAlphaInds = np.where(tArr == tArr.min())
+                    aInd = aAlphaInds[0][0]
+                    alphaInd = aAlphaInds[1][0]
+
+                    self.decisionListBox.insert(tk.END, 'a: %.2f alpha: %.2f' % (simulationSpace.aVect[aInd],
+                                                                                 simulationSpace.alphaVect[
+                                                                                     alphaInd] * 180.0 / np.pi))
+                    s1Ind = state.s1Arr[sInd, vNormInd, gammaInd, aInd, alphaInd]
+                    vNorm1Ind = state.v1Arr[sInd, vNormInd, gammaInd, aInd, alphaInd]
+                    gamma1Ind = state.gamma1Arr[sInd, vNormInd, gammaInd, aInd, alphaInd]
+
+                    sInd = s1Ind
+                    vNormInd = vNorm1Ind
+                    gammaInd = gamma1Ind

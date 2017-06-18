@@ -39,10 +39,10 @@ tau1 = 0.04
 #vNorm0 = 3.0
 #a0 = 8.
 b = 2.0
-vMax = 5.0
+vMax = 200.0
 aMax = b/2.0 * vMax ** 2
 
-dt = 0.05
+dt = 0.01
 eps = 0.01
 maxT = 10.0
 
