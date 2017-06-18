@@ -3,6 +3,7 @@ import Tkinter as tk
 import ttk
 import Cubic2DBezierCurve as c2bc
 import State as state
+import Simulation as sim
 import SimulationThread as st
 import TrackVisualizer as tv
 
@@ -71,7 +72,7 @@ class MainFrame(tk.Frame):
         self.alphaMaxScale.grid(row=5, column=0, columnspan=3, sticky='NEWS')
 
         self.lboxLabel.grid(row=6, column=0, sticky='NEWS')
-        self.timeLabel.grid(row=9, column=0, columnspan=2, sticky='NWS')
+        self.timeLabel.grid(row=10, column=0, columnspan=2, sticky='NWS')
 
         self.decisionListBox.grid(row=7, column=0, rowspan=2, columnspan=2, sticky='NEWS')
 
@@ -190,10 +191,33 @@ class MainFrame(tk.Frame):
         self.updateDecisionData()
 
     def updateDecisionData(self):
-        self.decisionListBox.delete(0, self.decisionListBox.size())
+        self.decisionListBox.delete(0, tk.END)
 
         if len(self.states) == 0:
             self.timeLabel['text'] = 'Minimalny czas: '
 
         else:
-            pass
+            simulationSpace = self.states[0].simulationSpace
+            sInd = sim.getNearestIndex(float(self.startPosScale.get()), simulationSpace.sVect)
+            vNormInd = sim.getNearestIndex(0.0, simulationSpace.vVect)
+            gammaInd = sim.getNearestIndex(0.0, simulationSpace.gammaVect)
+
+            self.timeLabel['text'] = 'Minimalny czas: %.2f' % (self.states[0].tArr[sInd, vNormInd, gammaInd, :, :].min(), )
+
+            for i in xrange(len(self.states) - 1):
+                state = self.states[i]
+
+                tArr = state.tArr[sInd, vNormInd, gammaInd, :, :]
+                aAlphaInds = np.where(tArr == tArr.min())
+                aInd = aAlphaInds[0][0]
+                alphaInd = aAlphaInds[1][0]
+
+                self.decisionListBox.insert(tk.END, 'a: %.2f alpha: %.2f' % (simulationSpace.aVect[aInd],
+                                                                             simulationSpace.alphaVect[alphaInd] * 180.0 / np.pi))
+                s1Ind = state.s1Arr[sInd, vNormInd, gammaInd, aInd, alphaInd]
+                vNorm1Ind = state.v1Arr[sInd, vNormInd, gammaInd, aInd, alphaInd]
+                gamma1Ind = state.gamma1Arr[sInd, vNormInd, gammaInd, aInd, alphaInd]
+
+                sInd = s1Ind
+                vNormInd = vNorm1Ind
+                gammaInd = gamma1Ind
