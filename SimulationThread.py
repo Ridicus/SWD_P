@@ -11,7 +11,7 @@ class SimulationThread(th.Thread):
         self.mainFrame = mainFrame
         self.simulationSpace = self.mainFrame.getSimulationSpace()
         self.simulationStepsCount = self.mainFrame.getSimulationStepsCount()
-        self.tauDelta = 1.0 / (self.simulationStepsCount - 1.0)
+        self.tauDelta = 1.0 / self.simulationStepsCount
 
         self.dt = self.mainFrame.dt
         self.eps = self.mainFrame.eps
@@ -30,4 +30,5 @@ class SimulationThread(th.Thread):
 
             self.simulationStepsCount -= 1
 
-        self.mainFrame.finished()
+        if self.simulationStepsCount == 0:
+            self.mainFrame.finished()

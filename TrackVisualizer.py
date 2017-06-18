@@ -4,11 +4,13 @@ import CubicBezierCurve as cbc
 import Cubic2DBezierCurve as c2bc
 
 class TrackVisualizer(object):
-    def __init__(self, canvas, curve, widthFun, waypointsCountFun, steps, pointSize, clickDistance, trackColor, borderColor, waypointColor, pointColor):
+    def __init__(self, canvas, curve, widthFun, waypointsCountFun, startPositionFun, steps, pointSize, clickDistance,
+                 trackColor, borderColor, waypointColor, startPointColor, pointColor):
         self.canvas = canvas
         self.curve = curve
         self.widthFun = widthFun
         self.waypointsCountFun = waypointsCountFun
+        self.startPositionFun = startPositionFun
         self.steps = steps
         self.pointSize = pointSize
         self.clickDistance = clickDistance
@@ -27,6 +29,7 @@ class TrackVisualizer(object):
         self.trackColor = trackColor
         self.borderColor = borderColor
         self.waypointColor = waypointColor
+        self.startPointColor = startPointColor
         self.pointColor = pointColor
 
         self.editMode = False
@@ -72,6 +75,16 @@ class TrackVisualizer(object):
                 for i in xrange(waypointsCount):
                     canvas.create_line(wayBorderPoints1[0, i], wayBorderPoints1[1, i],
                                        wayBorderPoints2[0, i], wayBorderPoints2[1, i], fill=self.waypointColor)
+
+                startPosition = self.startPositionFun()
+
+                if -1.0 <= startPosition <= 1.0:
+                    startPoint = waypoints[:, 0] + startPosition * widths[0] * normals[:, 0]
+                    canvas.create_oval(startPoint[0] - self.pointSize, startPoint[1] - self.pointSize,
+                                       startPoint[0] + self.pointSize, startPoint[1] + self.pointSize,
+                                       outline=self.startPointColor, fill=self.startPointColor)
+
+
 
             if self.editMode:
                 for i in xrange(self.curve.controlPointsCount):
