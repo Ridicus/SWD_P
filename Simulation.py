@@ -11,7 +11,7 @@ class Simulation(object):
         self.eps = eps
         self.maxT = maxT
 
-    def simulate(self, nextState, tau):
+    def simulate(self, nextState, tau, breakFun=lambda : False, callback=lambda : None):
         state = s.State(nextState.simulationSpace, tau)
 
         discretization = state.simulationSpace.discretization
@@ -22,6 +22,10 @@ class Simulation(object):
                     for l in xrange(discretization[3]):
                         for m in xrange(discretization[4]):
                             self.simulationStep(state, nextState, i, j, k, l, m)
+                            callback()
+
+                            if breakFun():
+                                return state
 
         return state
 

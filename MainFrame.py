@@ -2,28 +2,39 @@ import numpy as np
 import Tkinter as tk
 import ttk
 import Cubic2DBezierCurve as c2bc
+import State as state
+import SimulationThread as st
 import TrackVisualizer as tv
 
 class MainFrame(tk.Frame):
     def __init__(self, master=None):
         tk.Frame.__init__(self, master)
+        self.discretization = (5, 5, 5, 5, 5)
+        self.dt = 0.1
+        self.eps = 0.01
+        self.maxT = 10.0
+
         self.running = False
         self.editMode = False
+
+        self.simulationThread = None
 
         self.initWidgets()
         self.placeWidgets()
         self.configureGrid()
 
+        self.widthFun = lambda tau: self.wScale.get()
+
         self.visualizer = tv.TrackVisualizer(self.canvas,
                                              c2bc.Cubic2DBezierCurve(np.array([[], []], dtype=np.float_), True, 20),
-                                             lambda tau: self.wScale.get(), self.divPtsScale.get, 1000, 2, 10, 'blue', 'red', 'green', 'orange')
+                                             self.widthFun, self.divPtsScale.get, 1000, 2, 10, 'blue', 'red', 'green', 'orange')
 
         self.wScale['command'] = lambda x: self.visualizer.paint()
-        self.divPtsScale['command'] = lambda x: self.visualizer.paint()
 
     def initWidgets(self):
         self.wScale = tk.Scale(self, orient='horizontal', from_=0, to=30, label='Szerkosc trasy', state=tk.DISABLED)
-        self.divPtsScale = tk.Scale(self, orient='horizontal', from_=2, to=20, label='Liczba punktow kontrolnych')
+        self.divPtsScale = tk.Scale(self, orient='horizontal', from_=2, to=20, label='Liczba punktow kontrolnych',
+                                    command=self.divPointsScaleChanged)
         self.bScale = tk.Scale(self, orient='horizontal', from_=0.0, to=2.0, resolution=0.1, label='Parametr oporu powietrza')
         self.vMaxScale = tk.Scale(self, orient='horizontal', from_=0.0, to=20.0, resolution=0.1, label='Predkosc maksymalna')
         self.alphaMaxScale = tk.Scale(self, orient='horizontal', from_=0, to=90, label='Maksymalny kat skretu')
@@ -37,7 +48,7 @@ class MainFrame(tk.Frame):
         self.lboxYScroll['command'] = self.decisionListBox.yview
         self.lboxXScroll['command'] = self.decisionListBox.xview
 
-        self.progress = ttk.Progressbar(self, mode='determinate')
+        self.progress = ttk.Progressbar(self, mode='determinate', maximum=2.0 * reduce(lambda acc, x: acc * x, self.discretization, 1.0))
 
         self.startStopButton = tk.Button(self, text='Start', command=self.startClicked)
         self.editButton = tk.Button(self, text='Edytuj trase', command=self.editClicked)
@@ -90,7 +101,6 @@ class MainFrame(tk.Frame):
         self.vMaxScale['state'] = tk.NORMAL
         self.alphaMaxScale['state'] = tk.NORMAL
 
-
     def disableInputWidgets(self):
         self.editButton['state'] = tk.DISABLED
         self.divPtsScale['state'] = tk.DISABLED
@@ -99,15 +109,21 @@ class MainFrame(tk.Frame):
         self.alphaMaxScale['state'] = tk.DISABLED
 
     def startClicked(self):
+        self.progress['value'] = 0
         if self.running:
             self.startStopButton['text'] = 'Start'
             self.running = False
             self.enableInputWidgets()
 
+            self.simulationThread = None
+
         else:
             self.startStopButton['text'] = 'Stop'
             self.running = True
             self.disableInputWidgets()
+
+            self.simulationThread = st.SimulationThread(self)
+            self.simulationThread.start()
 
     def editClicked(self):
         if self.editMode:
@@ -123,3 +139,32 @@ class MainFrame(tk.Frame):
             self.wScale['state'] = tk.NORMAL
 
         self.visualizer.setEditMode(self.editMode)
+
+    def divPointsScaleChanged(self, val):
+        self.progress['maximum'] = float(val) * reduce(lambda acc, x: acc * x, self.discretization, 1.0)
+        self.visualizer.paint()
+
+    def continueExecution(self):
+        return self.running
+
+    def getSimulationSpace(self):
+        vMax = float(self.vMaxScale.get())
+        return state.SimulationSpace(self.visualizer.curve, self.widthFun, vMax, float(self.bScale.get()) * (vMax ** 2) / 2.0,
+                                     float(self.alphaMaxScale.get()) * np.pi / 180.0, self.discretization)
+
+    def getSimulationStepsCount(self):
+        return self.divPtsScale.get() - 1
+
+    def getBParam(self):
+        return self.bScale.get()
+
+    def progressStep(self):
+        self.progress.step(1.0)
+
+    def finished(self):
+        self.progress['value'] = 0
+        self.startStopButton['text'] = 'Start'
+        self.running = False
+        self.enableInputWidgets()
+
+        self.simulationThread = None
