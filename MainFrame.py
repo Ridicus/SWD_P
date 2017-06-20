@@ -11,9 +11,9 @@ class MainFrame(tk.Frame):
     def __init__(self, master=None):
         tk.Frame.__init__(self, master)
         self.discretization = (5, 5, 5, 5, 5) # (s, vNorm, gamma, a, alpha)
-        self.dt = 0.01
+        self.dt = 0.05
         self.eps = 0.01
-        self.maxT = 20.0
+        self.maxT = 10.0
 
         self.running = False
         self.editMode = False
@@ -43,7 +43,7 @@ class MainFrame(tk.Frame):
         self.startPosScale = tk.Scale(self, orient='horizontal', from_=-1.0, to=1.0, resolution=0.1, label='Pozycja startowa',
                                       command=self.startPosScaleChanged)
         self.bScale = tk.Scale(self, orient='horizontal', from_=0.0, to=2.0, resolution=0.1, label='Parametr oporu powietrza')
-        self.vMaxScale = tk.Scale(self, orient='horizontal', from_=50.0, to=200.0, resolution=0.1, label='Predkosc maksymalna')
+        self.vMaxScale = tk.Scale(self, orient='horizontal', from_=0.1, to=20.0, resolution=0.1, label='Predkosc maksymalna')
         self.alphaMaxScale = tk.Scale(self, orient='horizontal', from_=0, to=90, label='Maksymalny kat skretu')
 
         self.lboxLabel = tk.Label(self, text='Decyzje')
